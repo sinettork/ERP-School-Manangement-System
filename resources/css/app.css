@@ -1,0 +1,33 @@
+/* ===== Battambang Khmer font from Google Fonts ===== */
+@import url('https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&family=Figtree:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Base font: Battambang for all text ===== */
+@layer base {
+    html {
+        font-family: 'Battambang', 'Figtree', ui-sans-serif, system-ui, sans-serif;
+    }
+}
+
+/* ===== Admin sidebar components ===== */
+@layer components {
+    .sidebar-link {
+        @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+               text-slate-300 hover:bg-slate-700 hover:text-white
+               transition-colors duration-150 no-underline w-full;
+    }
+    .sidebar-link.active {
+        @apply bg-indigo-600 text-white;
+    }
+    .sidebar-sub {
+        @apply flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium
+               text-slate-400 hover:bg-slate-700 hover:text-white
+               transition-colors duration-150 no-underline w-full;
+    }
+    .sidebar-sub.active {
+        @apply bg-indigo-700 text-white;
+    }
+}
