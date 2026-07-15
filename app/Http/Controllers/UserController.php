@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
@@ -49,6 +50,7 @@ class UserController extends Controller
             'status'   => $data['status'],
         ]);
         $user->assignRole($data['role']);
+        event(new Registered($user));
 
         return redirect()->route('users.index')->with('success', 'បានបន្ថែមអ្នកប្រើប្រាស់ថ្មីដោយជោគជ័យ!');
     }

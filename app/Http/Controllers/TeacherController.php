@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Teacher;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class TeacherController extends Controller
 {
@@ -49,19 +52,29 @@ class TeacherController extends Controller
             $data['photo'] = $request->file('photo')->store('teachers/photos', 'public');
         }
 
-        if ($request->boolean('create_user') && $request->filled('email')) {
-            $user = User::create([
-                'name'     => $data['name'],
-                'email'    => $data['email'],
-                'password' => Hash::make($request->input('password', 'Teacher@1234')),
-                'status'   => 'active',
+        if ($request->boolean('create_user')) {
+            $request->validate([
+                'email' => ['required', 'email', 'max:100', Rule::unique('users', 'email')],
+                'password' => ['required', 'string', 'min:8', 'confirmed'],
             ]);
-            $user->assignRole('teacher');
-            $data['user_id'] = $user->id;
         }
 
         unset($data['create_user'], $data['password']);
-        Teacher::create($data);
+        DB::transaction(function () use ($request, &$data) {
+            if ($request->boolean('create_user')) {
+                $user = User::create([
+                    'name' => $data['name'],
+                    'email' => $data['email'],
+                    'password' => Hash::make($request->password),
+                    'status' => 'active',
+                ]);
+                $user->assignRole('teacher');
+                event(new Registered($user));
+                $data['user_id'] = $user->id;
+            }
+
+            Teacher::create($data);
+        });
 
         return redirect()->route('teachers.index')
             ->with('success', 'បានបន្ថែមគ្រូបង្រៀនថ្មីដោយជោគជ័យ!');

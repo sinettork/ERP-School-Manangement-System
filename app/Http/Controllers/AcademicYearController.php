@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AcademicYear;
 use App\Models\Semester;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AcademicYearController extends Controller
 {
@@ -32,15 +33,17 @@ class AcademicYearController extends Controller
             'is_active'  => 'boolean',
         ]);
 
-        if ($request->boolean('is_active')) {
-            AcademicYear::where('is_active', true)->update(['is_active' => false]);
-        }
+        DB::transaction(function () use ($request, $data) {
+            if ($request->boolean('is_active')) {
+                AcademicYear::where('is_active', true)->update(['is_active' => false]);
+            }
 
-        $year = AcademicYear::create($data);
+            $year = AcademicYear::create($data);
+            $semesterOneEnd = now()->parse($data['start_date'])->addMonths(4)->toDateString();
 
-        // Auto-create 2 semesters
-        Semester::create(['academic_year_id' => $year->id, 'name' => 'ឆមាសទី១', 'start_date' => $data['start_date'], 'end_date' => now()->parse($data['start_date'])->addMonths(4)->toDateString()]);
-        Semester::create(['academic_year_id' => $year->id, 'name' => 'ឆមាសទី២', 'start_date' => now()->parse($data['start_date'])->addMonths(4)->addDay()->toDateString(), 'end_date' => $data['end_date']]);
+            Semester::create(['academic_year_id' => $year->id, 'name' => 'ឆមាសទី១', 'start_date' => $data['start_date'], 'end_date' => $semesterOneEnd]);
+            Semester::create(['academic_year_id' => $year->id, 'name' => 'ឆមាសទី២', 'start_date' => now()->parse($semesterOneEnd)->addDay()->toDateString(), 'end_date' => $data['end_date']]);
+        });
 
         return redirect()->route('academic-years.index')
             ->with('success', 'បានបន្ថែមឆ្នាំសិក្សាថ្មីដោយជោគជ័យ!');
@@ -60,11 +63,13 @@ class AcademicYearController extends Controller
             'is_active'  => 'boolean',
         ]);
 
-        if ($request->boolean('is_active')) {
-            AcademicYear::where('is_active', true)->where('id', '!=', $academicYear->id)->update(['is_active' => false]);
-        }
+        DB::transaction(function () use ($request, $academicYear, $data) {
+            if ($request->boolean('is_active')) {
+                AcademicYear::where('is_active', true)->where('id', '!=', $academicYear->id)->update(['is_active' => false]);
+            }
 
-        $academicYear->update($data);
+            $academicYear->update($data);
+        });
 
         return redirect()->route('academic-years.index')
             ->with('success', 'បានកែប្រែឆ្នាំសិក្សាដោយជោគជ័យ!');

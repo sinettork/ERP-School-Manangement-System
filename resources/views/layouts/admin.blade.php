@@ -18,6 +18,56 @@
     </style>
 </head>
 <body class="bg-slate-100 font-sans antialiased" x-cloak>
+@php
+    $routeName = request()->route()?->getName();
+    $breadcrumbItems = [];
+    $resourceLabels = [
+        'dashboard' => 'ផ្ទាំងគ្រប់គ្រង',
+        'students' => 'សិស្ស',
+        'teachers' => 'គ្រូបង្រៀន',
+        'classes' => 'ថ្នាក់រៀន',
+        'subjects' => 'មុខវិជ្ជា',
+        'academic-years' => 'ឆ្នាំសិក្សា',
+        'attendance' => 'វត្តមាន',
+        'exams' => 'ការប្រឡង',
+        'scores' => 'បញ្ចូលពិន្ទុ',
+        'report-cards' => 'សៀវភៅពិន្ទុ',
+        'payments' => 'ថ្លៃសិក្សា',
+        'inventory' => 'សម្ភារៈ',
+        'staff' => 'បុគ្គលិក',
+        'library' => 'បណ្ណាល័យ',
+        'announcements' => 'សេចក្ដីជូនដំណឹង',
+        'users' => 'អ្នកប្រើប្រាស់',
+        'settings' => 'ការកំណត់',
+        'profile' => 'គណនី',
+    ];
+
+    if ($routeName) {
+        $parts = explode('.', $routeName);
+        $resource = $parts[0] ?? null;
+        $action = $parts[1] ?? null;
+
+        if ($resource && $resource !== 'dashboard' && !in_array($routeName, ['dashboard'], true)) {
+            $resourceLabel = $resourceLabels[$resource] ?? ucfirst(str_replace('-', ' ', $resource));
+            $indexRoute = $resource . '.index';
+
+            $breadcrumbItems[] = ['label' => 'ផ្ទាំងគ្រប់គ្រង', 'url' => route('dashboard')];
+
+            if (in_array($action, ['create', 'edit', 'show'], true)) {
+                if (\Illuminate\Support\Facades\Route::has($indexRoute)) {
+                    $breadcrumbItems[] = ['label' => $resourceLabel, 'url' => route($indexRoute)];
+                } else {
+                    $breadcrumbItems[] = ['label' => $resourceLabel, 'url' => null];
+                }
+
+                $actionLabel = $action === 'create' ? 'បន្ថែម' : ($action === 'edit' ? 'កែប្រែ' : 'លំអិត');
+                $breadcrumbItems[] = ['label' => $actionLabel, 'url' => null];
+            } elseif ($routeName !== $indexRoute) {
+                $breadcrumbItems[] = ['label' => $resourceLabel, 'url' => null];
+            }
+        }
+    }
+@endphp
 <div class="flex h-screen overflow-hidden">
 
     {{-- ===== SIDEBAR ===== --}}
@@ -297,6 +347,24 @@
 
         {{-- Page content --}}
         <main class="flex-1 overflow-y-auto p-6">
+            @if(!empty($breadcrumbItems))
+                <div class="mb-5 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                    @foreach($breadcrumbItems as $index => $crumb)
+                        @if($index > 0)
+                            <span class="text-slate-400">›</span>
+                        @endif
+
+                        @if(!empty($crumb['url']) && $index < count($breadcrumbItems) - 1)
+                            <a href="{{ $crumb['url'] }}" class="font-medium text-indigo-600 hover:text-indigo-700">
+                                {{ $crumb['label'] }}
+                            </a>
+                        @else
+                            <span class="font-medium text-slate-700">{{ $crumb['label'] }}</span>
+                        @endif
+                    @endforeach
+                </div>
+            @endif
+
             @yield('content')
         </main>
     </div>

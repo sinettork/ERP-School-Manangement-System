@@ -51,9 +51,9 @@ class DatabaseSeeder extends Seeder
             'view exams', 'create exams', 'edit exams', 'delete exams',
             'view scores', 'enter scores', 'edit scores',
             // Report Cards
-            'view report cards', 'generate report cards',
+            'view report cards', 'generate report cards', 'delete report cards',
             // Payments
-            'view payments', 'create payments', 'edit payments',
+            'view payments', 'create payments', 'edit payments', 'delete payments',
             // Finance
             'view finance', 'manage finance',
             // Staff
@@ -135,29 +135,23 @@ class DatabaseSeeder extends Seeder
             'view attendance', 'view payments',
         ]);
 
-        // ៤. បង្កើត Super Admin user
-        $superAdminUser = User::firstOrCreate(
-            ['email' => 'admin@school.edu.kh'],
-            [
-                'name'     => 'Super Administrator',
-                'password' => Hash::make('Admin@1234'),
-                'phone'    => '012345678',
-                'status'   => 'active',
-            ]
-        );
-        $superAdminUser->assignRole('super-admin');
+        // Create an initial owner only when deployment credentials are explicitly supplied.
+        $initialAdminEmail = env('SEED_SUPER_ADMIN_EMAIL');
+        $initialAdminPassword = env('SEED_SUPER_ADMIN_PASSWORD');
 
-        // ៥. បង្កើត Demo Admin user
-        $adminUser = User::firstOrCreate(
-            ['email' => 'school.admin@school.edu.kh'],
-            [
-                'name'     => 'School Admin',
-                'password' => Hash::make('Admin@1234'),
-                'phone'    => '012345679',
-                'status'   => 'active',
-            ]
-        );
-        $adminUser->assignRole('admin');
+        if ($initialAdminEmail && $initialAdminPassword) {
+            $superAdminUser = User::firstOrCreate(
+                ['email' => $initialAdminEmail],
+                [
+                    'name' => env('SEED_SUPER_ADMIN_NAME', 'Super Administrator'),
+                    'password' => Hash::make($initialAdminPassword),
+                    'status' => 'active',
+                    'email_verified_at' => now(),
+                ]
+            );
+            $superAdminUser->assignRole('super-admin');
+            $superAdminUser->forceFill(['email_verified_at' => now(), 'status' => 'active'])->save();
+        }
 
         // ៦. ព័ត៌មានសាលា
         SchoolInformation::firstOrCreate(
@@ -195,8 +189,9 @@ class DatabaseSeeder extends Seeder
             Setting::firstOrCreate(['key' => $key], ['value' => $value]);
         }
 
-        $this->command->info('✅ Seeding completed!');
-        $this->command->info('   Super Admin → admin@school.edu.kh / Admin@1234');
-        $this->command->info('   Admin       → school.admin@school.edu.kh / Admin@1234');
+        $this->command->info('Seeding completed.');
+        if (! $initialAdminEmail || ! $initialAdminPassword) {
+            $this->command->warn('No initial administrator was created. Set SEED_SUPER_ADMIN_EMAIL and SEED_SUPER_ADMIN_PASSWORD before seeding production.');
+        }
     }
 }

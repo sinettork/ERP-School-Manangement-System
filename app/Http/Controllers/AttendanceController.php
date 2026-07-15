@@ -7,6 +7,7 @@ use App\Models\SchoolClass;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
@@ -36,18 +37,35 @@ class AttendanceController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'class_id' => 'required|exists:classes,id',
             'date'     => 'required|date',
             'statuses' => 'required|array',
+            'statuses.*' => 'required|in:present,absent,leave,late',
+            'notes' => 'nullable|array',
+            'notes.*' => 'nullable|string|max:1000',
         ]);
 
-        foreach ($request->statuses as $studentId => $status) {
-            Attendance::updateOrCreate(
-                ['student_id' => $studentId, 'class_id' => $request->class_id, 'date' => $request->date],
-                ['status' => $status, 'note' => $request->notes[$studentId] ?? null, 'recorded_by' => auth()->id()]
-            );
+        $studentIds = array_keys($data['statuses']);
+        $validStudentIds = Student::where('class_id', $data['class_id'])
+            ->where('status', 'active')
+            ->whereIn('id', $studentIds)
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->all();
+
+        if (array_diff(array_map('strval', $studentIds), $validStudentIds)) {
+            return back()->withErrors(['statuses' => 'វត្តមានត្រូវតែកត់ត្រាសម្រាប់សិស្សសកម្មក្នុងថ្នាក់ដែលបានជ្រើស។'])->withInput();
         }
+
+        DB::transaction(function () use ($data) {
+            foreach ($data['statuses'] as $studentId => $status) {
+                Attendance::updateOrCreate(
+                    ['student_id' => $studentId, 'class_id' => $data['class_id'], 'date' => $data['date']],
+                    ['status' => $status, 'note' => $data['notes'][$studentId] ?? null, 'recorded_by' => auth()->id()]
+                );
+            }
+        });
 
         return redirect()->back()->with('success', 'បានរក្សាទុកវត្តមានដោយជោគជ័យ!');
     }

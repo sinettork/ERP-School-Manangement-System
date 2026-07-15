@@ -1,14 +1,15 @@
-/* ===== Battambang Khmer font from Google Fonts ===== */
-@import url('https://fonts.googleapis.com/css2?family=Battambang:wght@400;700&family=Figtree:wght@400;500;600;700&display=swap');
+/* ===== Siemreap Khmer font from Google Fonts ===== */
+@import url("https://fonts.googleapis.com/css2?family=Siemreap&family=Figtree:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ===== Base font: Battambang for all text ===== */
+/* ===== Base font: Siemreap for all text ===== */
 @layer base {
     html {
-        font-family: 'Battambang', 'Figtree', ui-sans-serif, system-ui, sans-serif;
+        font-family:
+            "Siemreap", "Figtree", ui-sans-serif, system-ui, sans-serif;
     }
 }
 

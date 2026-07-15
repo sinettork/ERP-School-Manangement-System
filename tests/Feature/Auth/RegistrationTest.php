@@ -13,10 +13,10 @@ class RegistrationTest extends TestCase
     {
         $response = $this->get('/register');
 
-        $response->assertStatus(200);
+        $response->assertOk();
     }
 
-    public function test_new_users_can_register(): void
+    public function test_public_registration_creates_an_inactive_account(): void
     {
         $response = $this->post('/register', [
             'name' => 'Test User',
@@ -25,7 +25,8 @@ class RegistrationTest extends TestCase
             'password_confirmation' => 'password',
         ]);
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(route('dashboard', absolute: false));
+        $this->assertGuest();
+        $response->assertRedirect(route('login', absolute: false));
+        $this->assertDatabaseHas('users', ['email' => 'test@example.com', 'status' => 'inactive']);
     }
 }

@@ -46,6 +46,7 @@
             </div>
             <div x-ref="userFields" class="{{ old('create_user') ? '' : 'hidden' }} grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <x-form-input label="ពាក្យសម្ងាត់" name="password" type="password" placeholder="យ៉ាងតិច ៨ តួ"/>
+                <x-form-input label="បញ្ជាក់ពាក្យសម្ងាត់" name="password_confirmation" type="password" placeholder="បញ្ចូលម្ដងទៀត"/>
             </div>
         </div>
     </div>

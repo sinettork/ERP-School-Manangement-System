@@ -8,6 +8,7 @@ use App\Models\PaymentReceipt;
 use App\Models\Student;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
@@ -49,15 +50,11 @@ class PaymentController extends Controller
             'status'           => 'required|in:paid,partial,unpaid',
         ]);
 
-        $data['received_by'] = auth()->id();
-        $payment = Payment::create($data);
-
-        if ($data['status'] === 'paid') {
-            PaymentReceipt::create([
-                'payment_id' => $payment->id,
-                'receipt_no' => 'RCP-' . str_pad($payment->id, 6, '0', STR_PAD_LEFT),
-            ]);
-        }
+        DB::transaction(function () use ($data) {
+            $data['received_by'] = auth()->id();
+            $payment = Payment::create($data);
+            $this->syncReceipt($payment);
+        });
 
         return redirect()->route('payments.index')
             ->with('success', 'បានកត់ត្រាការទូទាត់ដោយជោគជ័យ!');
@@ -86,7 +83,10 @@ class PaymentController extends Controller
             'status'       => 'required|in:paid,partial,unpaid',
         ]);
 
-        $payment->update($data);
+        DB::transaction(function () use ($payment, $data) {
+            $payment->update($data);
+            $this->syncReceipt($payment);
+        });
         return redirect()->route('payments.index')
             ->with('success', 'បានកែប្រែការទូទាត់ដោយជោគជ័យ!');
     }
@@ -100,9 +100,25 @@ class PaymentController extends Controller
 
     public function receipt(Payment $payment)
     {
+        abort_unless($payment->status === 'paid' && $payment->receipt()->exists(), 404);
+
         $payment->load(['student', 'academicYear', 'receivedBy', 'receipt']);
         $pdf = Pdf::loadView('payments.receipt-pdf', compact('payment'))
             ->setPaper('a5', 'portrait');
         return $pdf->stream('receipt-' . ($payment->receipt->receipt_no ?? $payment->id) . '.pdf');
+    }
+
+    private function syncReceipt(Payment $payment): void
+    {
+        if ($payment->status === 'paid') {
+            PaymentReceipt::firstOrCreate(
+                ['payment_id' => $payment->id],
+                ['receipt_no' => 'RCP-' . str_pad($payment->id, 6, '0', STR_PAD_LEFT)]
+            );
+
+            return;
+        }
+
+        $payment->receipt()->delete();
     }
 }

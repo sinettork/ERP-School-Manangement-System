@@ -91,4 +91,9 @@
         </button>
     </form>
 
+    <p class="mt-6 text-center text-sm text-slate-600">
+        មិនទាន់មានគណនី?
+        <a href="{{ route('register') }}" class="font-medium text-indigo-600 hover:text-indigo-700">ចុះឈ្មោះ</a>
+    </p>
+
 </x-guest-layout>
