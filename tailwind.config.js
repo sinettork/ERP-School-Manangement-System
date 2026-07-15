@@ -13,8 +13,8 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                // Battambang for Khmer, Figtree as Latin fallback
-                sans: ['Battambang', 'Figtree', ...defaultTheme.fontFamily.sans],
+                // Siemreap for Khmer, Figtree as Latin fallback
+                sans: ['Siemreap', 'Figtree', ...defaultTheme.fontFamily.sans],
             },
         },
     },
